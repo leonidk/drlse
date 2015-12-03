@@ -132,7 +132,7 @@ else:
         
         #imr = (img-img.min())/(img.max()-img.min())
         #img = 255*exposure.equalize_adapthist(imr, clip_limit=0.01)
-
+        img = (img-meanImg)+meanImg.mean()
         if idx ==0:#True or idx == 0:
             initialLSF = c0*np.ones(img.shape)
             if True:
@@ -198,7 +198,7 @@ else:
         phi[:,0] = c0
         phi[:,-1] = c0
 
-        hough_trim = True
+        hough_trim = False
         if hough_trim:
             initialLSF = c0*np.ones(img.shape)
 
