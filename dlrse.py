@@ -107,35 +107,36 @@ else:
     iter_basic = 1000
     iter_refine = 0
     lambdap = 5
-    alpha = 1.0#-3 #1.5 # -3
+    alpha = -0.8#-3 #1.5 # -3
     epsilon = 1.5
-    sigma = 0.8
+    sigma = 1.2
     c0 = 2
-    elem = morphology.disk(5)
+    elem = morphology.disk(3) #was 3 for savved data
     iml = None
     imgs = []
     for idx,fn in enumerate(sorted(os.listdir('.'))):
         img = io.imread(fn)
         if len(img.shape) == 3:
-            img = img[:,:,1]
+            img = img[:,:,1] #(0.5*img[:,:,1] + 0.25*img[:,:,0] + 0.25*img[:,:,2])
             img = img.astype(np.float) 
         imgs.append(img)
     meanImg = np.mean( np.array(imgs), axis=0 )
     stdImg = np.std( np.array(imgs),axis=0)
-
+    tracked_size = []
     for idx,fn in enumerate(sorted(os.listdir('.'))):
         img = io.imread(fn)
         orig_img = img.copy()
         if len(img.shape) == 3:
             img = img[:,:,1]
+            #img = (0.5*img[:,:,1] + 0.25*img[:,:,0] + 0.25*img[:,:,2])
             img = img.astype(np.float) 
         
         #imr = (img-img.min())/(img.max()-img.min())
         #img = 255*exposure.equalize_adapthist(imr, clip_limit=0.01)
-        img = (img-meanImg)+meanImg.mean()
+        img = (img-0.5*meanImg)+0.5*meanImg.mean()
         if idx ==0:#True or idx == 0:
             initialLSF = c0*np.ones(img.shape)
-            if True:
+            if False:
                 initialLSF[10:50,10:50] = -c0 #cell 3
                 #initialLSF[40:120,40:120] = -c0 #cell 8
 
@@ -165,7 +166,8 @@ else:
                         initialLSF[cy, cx] = -c0
                     except:
                         pass
-                initialLSF = morphology.erosion(initialLSF,elem)
+                #initialLSF = morphology.erosion(initialLSF,elem)
+                initialLSF = morphology.dilation(initialLSF,elem)
 
 
             phi = initialLSF
@@ -186,23 +188,25 @@ else:
         orig_img[:,:,0] = uint8(200*(phi < 0))
         #orig_img[:,:,1] += uint8(255*(phi < 0))
         #orig_img[:,:,2] += uint8(255*(phi < 0))
-
+        tracked_size.append(len(phi[phi < 0]))
         pili = Image.fromarray(orig_img)
         pili.save('../out/' + fn)
         print fn
         #imshow(phi)
         #show()
-        phi = morphology.erosion(phi,elem)
+        #phi = morphology.erosion(phi,elem)
+        phi = morphology.dilation(phi,elem)
+
         phi[0,:] =  c0
         phi[-1,:] = c0
         phi[:,0] = c0
         phi[:,-1] = c0
 
-        hough_trim = False
+        hough_trim = True
         if hough_trim:
             initialLSF = c0*np.ones(img.shape)
-
-            edges = canny(img, sigma=3, low_threshold=10, high_threshold=50)
+            edges = canny(phi)
+            #edges = canny(img, sigma=3, low_threshold=10, high_threshold=50)
             #img = edges
             hough_radii = np.arange(20, 30, 3)
             hough_res = hough_circle(edges, hough_radii)
@@ -227,3 +231,10 @@ else:
                 except:
                     pass
             phi = np.maximum(phi,initialLSF)
+
+    plt.style.use('ggplot')
+    plot(range(len(tracked_size)),tracked_size)
+    xlabel('Frame Number')
+    ylabel('Number of Pixels')
+    title('Consistency of tracked result')
+    savefig('res.png')
