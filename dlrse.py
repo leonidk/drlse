@@ -195,7 +195,7 @@ else:
         #imshow(phi)
         #show()
         #phi = morphology.erosion(phi,elem)
-        phi = morphology.dilation(phi,elem)
+        #phi = morphology.dilation(phi,elem)
 
         phi[0,:] =  c0
         phi[-1,:] = c0
@@ -233,7 +233,7 @@ else:
             phi = np.maximum(phi,initialLSF)
 
     plt.style.use('ggplot')
-    plot(range(len(tracked_size)),tracked_size)
+    plot(tracked_size)
     xlabel('Frame Number')
     ylabel('Number of Pixels')
     title('Consistency of tracked result')
